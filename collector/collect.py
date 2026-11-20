@@ -12,7 +12,7 @@ Sources
                              (6-hour bulk archive files at pskreporter.info/csv)
   Parks on the Air (POTA)    activations of Hawaii parks + hunter QSOs logged by activators
   Summits on the Air (SOTA)  activations of Hawaii summits
-  40meter.net                check-ins to the Hawaii HF nets (current month only -> run often)
+  40meter.net                check-ins to Hawaii HF, VHF/UHF and DMR nets (recent nets only -> run often)
 
 Every source is collected separately; if one fails, the others still update and
 the page keeps the last good data for the failed one.
@@ -318,8 +318,8 @@ def parse_net_log(text):
                 if m: n['date'] = f'{m[3]}-{m[1]}-{m[2]}'
                 m = re.match(r'#\s*Roster opened by\s+(\S+)', l)
                 if m: n['ncs'] = m[1].upper()
-                m = re.match(r'#\s*NET:\s*(.+?)\s+on\s+([\d.]+)', l)
-                if m: n['net'], n['freq'] = m[1].strip(), m[2]
+                m = re.match(r'#\s*NET:\s*(.+?)(?:\s+on\s+([\d.]+))?\s*$', l)
+                if m: n['net'], n['freq'] = m[1].strip(), m[2] or ''
                 m = re.match(r'#\s*Opened:\s*(.+)', l)
                 if m: n['opened'] = m[1].strip()
                 continue
@@ -329,17 +329,32 @@ def parse_net_log(text):
         if n['date'] and n['calls']: nets.append(n)
     return nets
 
+NET40_LOGS = {   # 40meter.net log pages (same format); each shows only recent nets -> run often
+    'hf': 'https://40meter.net/hf_log.cgi',                      # Aloha, Hi-Noon, Afternoon ... nets
+    'vhf': 'https://40meter.net/vhf_uhf_log_display.cgi',        # VHF/UHF, DMR, C4FM, ARES ... nets
+    'hf2': 'https://40meter.net/hf-2_log_display.cgi',           # 10-10 net, HF hospital net ...
+}
+
 def update_net40():
-    nets = parse_net_log(http('https://40meter.net/hf_log.cgi'))
+    nets, failed = [], []
+    for log_name, url in NET40_LOGS.items():
+        try:
+            got = parse_net_log(http(url))
+            for n in got: n['log'] = log_name
+            nets += got
+            log(f'40meter.net {log_name}: {len(got)} nets on page')
+        except Exception as e:
+            failed.append(log_name); log(f'40meter.net {log_name} failed: {e}')
+    if len(failed) == len(NET40_LOGS): raise RuntimeError('40meter.net: all log pages failed')
     stored = load('net40.json', [])
-    key = lambda n: (n['date'], n['net'], n['freq'], n.get('opened', ''), n['ncs'])
+    key = lambda n: (n.get('log', 'hf'), n['date'], n['net'], n['freq'], n.get('opened', ''), n['ncs'])
     merged = {key(n): n for n in stored}
     for n in nets: merged[key(n)] = n        # newer copy wins (logs can be edited during the month)
     cutoff = (TODAY - dt.timedelta(days=KEEP_DAYS)).isoformat()
     out = sorted((n for n in merged.values() if n['date'] >= cutoff), key=lambda n: (n['date'], n.get('opened', '')))
     save('net40.json', out, pretty=False)
-    ok('net40', f'{len(nets)} nets on the current page, {len(out)} stored')
-    log(f'40meter.net: {len(nets)} nets on page, {len(out)} stored')
+    ok('net40', f'{len(nets)} nets on the log pages, {len(out)} stored' + (f' (failed: {", ".join(failed)})' if failed else ''))
+    log(f'40meter.net: {len(out)} nets stored')
 
 # ---------------------------------------------------------------- build data.json
 def build():
@@ -392,11 +407,17 @@ def build():
     HM = {'CW': 'cw', 'DATA': 'data', 'PHONE': 'voice', 'SSB': 'voice', 'FM': 'voice', 'AM': 'voice'}
     for call, date, _, _, _, mode in load('pota_hunter.json', []):
         add(call, dt.date.fromisoformat(date[:10]), HM.get(mode.upper(), 'data'), 'hunt', q=1)
+    net_seen, net_calls = set(), set()
     for n in load('net40.json', []):
         d = dt.date.fromisoformat(n['date'])
+        name = n['net'].upper()
+        mode = 'data' if any(w in name for w in ('WINLINK', 'DIGITAL', 'JS8', 'FT8', 'PACKET', 'VARA')) else 'voice'
         for c in n['calls']:
             b = base(c)
-            add(b, d, 'voice', 'net', ci=1, nr=1 if b == base(n['ncs']) else 0)
+            k = (b, n['date'], name, n.get('log', 'hf'))      # same net logged twice -> count once
+            if k in net_seen: continue
+            net_seen.add(k); net_calls.add(b)
+            add(b, d, mode, 'net', ci=1, nr=1 if b == base(n['ncs']) else 0)
 
     calls = sorted({k[0] for k in ev})
     idx = {c: i for i, c in enumerate(calls)}
@@ -404,7 +425,9 @@ def build():
     for c in calls:
         if c in hi: stations.append([c, 'R', hi[c]['island'], hi[c]['city']])
         elif c in fstate: stations.append([c, 'V', '', 'Lic. in ' + fstate[c] + ('' if c in seen_hi_op else ' · net check-ins')])
-        else: stations.append([c, 'V' if c in seen_hi_op else 'U', '', ''])
+        elif c in seen_hi_op: stations.append([c, 'V', '', ''])
+        elif c in net_calls: stations.append([c, 'V', '', 'Net check-ins'])   # e.g. foreign or new calls on a Hawaii net
+        else: stations.append([c, 'U', '', ''])
     out = {
         'asof': TODAY.isoformat(), 'start': start.isoformat(),
         'generated': dt.datetime.now(dt.timezone.utc).isoformat(timespec='minutes').replace('+00:00', ''),
