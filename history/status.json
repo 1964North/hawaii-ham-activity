@@ -1,0 +1,30 @@
+{
+ "fcc": {
+  "note": "3887 active Hawaii licenses",
+  "updated": "2026-11-20T06:56+00:00"
+ },
+ "net40": {
+  "note": "66 nets on the current page, 66 stored",
+  "updated": "2026-11-20T06:53+00:00"
+ },
+ "pota": {
+  "note": "102 parks, 2674 activations",
+  "updated": "2026-11-20T06:54+00:00"
+ },
+ "pota_hunter": {
+  "note": "121 profiles, +0 new QSOs",
+  "updated": "2026-11-20T06:54+00:00"
+ },
+ "psk": {
+  "note": "152 archive files processed",
+  "updated": "2026-11-20T07:25+00:00"
+ },
+ "rbn": {
+  "note": "through 2026-11-18",
+  "updated": "2026-11-20T06:55+00:00"
+ },
+ "sota": {
+  "note": "261 activations",
+  "updated": "2026-11-20T06:54+00:00"
+ }
+}

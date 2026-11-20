@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hawaii Ham Radio Activity (Beta)</title>
+<style>
+:root{
+  --surface-0:#f4f3ef; --surface-1:#fcfcfb; --border:#e3e1da; --grid:#ecebe6;
+  --text-primary:#1f1e1c; --text-secondary:#5c5b55; --text-muted:#86857d;
+  --accent:#2a78d6; --accent-soft:#e6f0fb;
+  --s-cw:#2a78d6; --s-data:#eb6834; --s-voice:#1baf7a; --s-unk:#eda100;
+  --badge-r:#e6f0fb; --badge-r-t:#1c5cab; --badge-v:#fdeee6; --badge-v-t:#9a3d14; --badge-u:#efeee9; --badge-u-t:#5c5b55;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --surface-0:#121211; --surface-1:#1a1a19; --border:#33322f; --grid:#2a2a28;
+  --text-primary:#f0efec; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
+  --accent:#3987e5; --accent-soft:#1d2b3d;
+  --s-cw:#3987e5; --s-data:#d95926; --s-voice:#199e70; --s-unk:#c98500;
+  --badge-r:#1d2b3d; --badge-r-t:#9ec5f4; --badge-v:#3a2418; --badge-v-t:#f3b495; --badge-u:#2a2a28; --badge-u-t:#c3c2b7;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+.beta{display:inline-block;vertical-align:4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--badge-v);color:var(--badge-v-t)}
+footer{margin-top:24px;text-align:center;color:var(--text-muted);font-size:13px}
+.sub{color:var(--text-secondary);margin:0 0 20px}
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:16px}
+.filters{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;margin-bottom:16px}
+.fgroup{display:flex;flex-direction:column;gap:4px}
+.fgroup label,.flabel{font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface-1)}
+.seg button{border:0;background:none;color:var(--text-secondary);padding:7px 12px;font:inherit;cursor:pointer}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff}
+select,input[type=search]{font:inherit;color:var(--text-primary);background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:7px 10px}
+input[type=search]{width:150px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.tile .k{font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tile .v{font-size:30px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums}
+.tile .n{color:var(--text-secondary);font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px}
+h2{font-size:15px;margin:0 0 10px}
+.isl{display:grid;grid-template-columns:150px 1fr 120px;gap:6px 10px;align-items:center}
+.isl .name{color:var(--text-secondary)}
+.isl .track{height:14px;background:var(--grid);border-radius:4px;position:relative}
+.isl .bar{height:14px;background:var(--accent);border-radius:4px;min-width:2px}
+.isl .val{font-variant-numeric:tabular-nums;color:var(--text-secondary);font-size:13px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:12px;color:var(--text-muted);text-align:left;font-weight:600;padding:8px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+th.num,td.num{text-align:right}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable[aria-sort]{color:var(--text-primary)}
+td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:middle}
+td.rank{color:var(--text-muted);width:44px}
+a.call{color:var(--text-primary);font-weight:650;text-decoration:none;letter-spacing:.02em}
+a.call:hover{text-decoration:underline}
+.badge{font-size:11px;padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap}
+.b-R{background:var(--badge-r);color:var(--badge-r-t)} .b-V{background:var(--badge-v);color:var(--badge-v-t)} .b-U{background:var(--badge-u);color:var(--badge-u-t)}
+.loc{color:var(--text-secondary);font-size:13px}
+.mix{display:flex;gap:2px;width:120px;height:10px}
+.mix span{display:block;height:10px;border-radius:3px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary);margin:0 0 8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.more{margin-top:12px;text-align:center}
+.more button{font:inherit;border:1px solid var(--border);background:var(--surface-1);color:var(--text-primary);border-radius:8px;padding:7px 16px;cursor:pointer}
+.empty{padding:24px;text-align:center;color:var(--text-muted)}
+#tip{position:fixed;pointer-events:none;background:var(--surface-1);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);display:none;z-index:10;min-width:150px}
+#tip .row{display:flex;justify-content:space-between;gap:12px}
+#tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+details{margin-top:16px} summary{cursor:pointer;font-weight:600}
+.method{color:var(--text-secondary)} .method li{margin:4px 0}
+.tablewrap{overflow-x:auto}
+@media (max-width:640px){.hide-sm{display:none}.isl{grid-template-columns:110px 1fr 90px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hawaii Ham Radio Activity <span class="beta">Beta</span></h1>
+  <p class="sub" id="sub">Amateur radio operators active on the air in Hawaii, from public logs and on-air reports.</p>
+
+  <div class="filters" role="group" aria-label="Filters">
+    <div class="fgroup"><span class="flabel">Period</span>
+      <div class="seg" id="f-period"><button data-v="7">Last week</button><button data-v="30">Last month</button><button data-v="365">Last year</button></div></div>
+    <div class="fgroup"><span class="flabel">Mode</span>
+      <div class="seg" id="f-mode"><button data-v="all">All</button><button data-v="2">Voice</button><button data-v="0">CW</button><button data-v="1">Data</button></div></div>
+    <div class="fgroup"><span class="flabel">Operators</span>
+      <div class="seg" id="f-status"><button data-v="all">All</button><button data-v="R">Residents</button><button data-v="V">Non-residents</button></div></div>
+    <div class="fgroup"><label for="f-island">Island</label>
+      <select id="f-island"><option value="all">All islands</option></select></div>
+    <div class="fgroup"><label for="f-q">Callsign</label>
+      <input type="search" id="f-q" placeholder="e.g. KH6" autocomplete="off"></div>
+  </div>
+
+  <div class="tiles">
+    <div class="card tile"><div class="k">Active stations</div><div class="v" id="t-active">–</div><div class="n" id="t-active-n"></div></div>
+    <div class="card tile"><div class="k">Active resident hams</div><div class="v" id="t-res">–</div><div class="n" id="t-res-n"></div></div>
+    <div class="card tile"><div class="k">Logged QSOs</div><div class="v" id="t-qso">–</div><div class="n">POTA (activator &amp; hunter) and SOTA</div></div>
+    <div class="card tile"><div class="k">Net check-ins</div><div class="v" id="t-ci">–</div><div class="n" id="t-ci-n">40meter.net HF nets</div></div>
+    <div class="card tile"><div class="k">Times heard on air</div><div class="v" id="t-spots">–</div><div class="n">Reverse Beacon Network &amp; PSK Reporter</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2 id="isl-title">Active residents by island (% of licensed hams)</h2>
+      <div class="isl" id="islands"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">Ranking</h2>
+      <div class="legend" aria-label="Mode legend"><span><i style="background:var(--s-voice)"></i>Voice</span><span><i style="background:var(--s-cw)"></i>CW</span><span><i style="background:var(--s-data)"></i>Data</span><span><i style="background:var(--s-unk)"></i>Mode not reported (SOTA)</span></div>
+    </div>
+    <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Callsign</th><th>Status</th><th class="hide-sm">Location</th>
+        <th class="num sortable" data-k="days" title="Distinct days with any logged or heard activity">Active days</th>
+        <th class="num sortable" data-k="qsos" title="QSOs from POTA and SOTA activation logs, plus POTA hunter QSOs logged by activators">Logged QSOs</th>
+        <th class="num sortable" data-k="ci" title="Check-ins to 40meter.net HF nets (Aloha, Hi-Noon, Afternoon and others)">Net check-ins</th>
+        <th class="num sortable" data-k="spots" title="Times decoded by Reverse Beacon Network and PSK Reporter receivers">Times heard</th>
+        <th class="hide-sm">Mode mix</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    </div>
+    <div class="more" id="more" hidden><button type="button">Show more</button></div>
+  </div>
+
+  <details class="card">
+    <summary>How this ranking works &amp; its limits</summary>
+    <div class="method">
+      <ul>
+        <li><b>Ranking:</b> stations are ranked by <b>active days</b>, meaning distinct days on which they made a logged QSO or were heard on the air. Ties are broken by net check-ins, then logged QSOs, then times heard. Click a column header to rank by that column instead.</li>
+        <li><b>Logged QSOs</b> come from the public <a href="https://pota.app">Parks on the Air</a> and <a href="https://www.sota.org.uk">Summits on the Air</a> logs for activations of Hawaii parks and summits. These are real contacts. SOTA doesn't report modes, so SOTA QSOs only appear under "All".</li>
+        <li><b>POTA hunter QSOs</b> are contacts with park activators anywhere in the world, as logged by the activator. Hunters don't need to upload anything. POTA's public profile shows only a ham's 25 most recent hunter QSOs, and only for hams with a POTA account. So this covers about 120 Hawaii hams, history starts at each one's latest 25 contacts, and new contacts are captured each day going forward. The station's location isn't recorded, so residents are assumed to be hunting from home.</li>
+        <li><b>Net check-ins</b> come from the public <a href="https://40meter.net">40meter.net</a> HF net logs (Aloha, Hi-Noon and Afternoon nets on 7.090 MHz, plus Bandhopper, Mesh and ARES nets). Each check-in counts as a voice active day for that station, and net control is shown separately. 40meter.net only publishes the current month, so net data starts November 1, 2026.</li>
+        <li><b>Times heard</b> comes from the <a href="https://www.reversebeacon.net">Reverse Beacon Network</a> (mostly CW, plus some FT8/RTTY) and <a href="https://pskreporter.info">PSK Reporter</a> (FT8, FT4, JS8 and other data modes, counted when the sending station's grid is in Hawaii). These count automatic decodes of a station's signal, not QSOs. Beacons and WSPR are excluded. PSK Reporter data starts November 1, 2026.</li>
+        <li><b>Residents</b> are callsigns with an active FCC license and a Hawaii mailing address. Island is taken from the ZIP code. <b>Non-residents</b> are either operating from Hawaii (a POTA/SOTA activation here, or signing /KH6) with a license registered elsewhere, or checking into a Hawaii net with a license registered elsewhere. <b>Unverified</b> means heard with a Hawaii prefix but not found in the active FCC database. These may be expired licenses or callsigns the receivers decoded incorrectly.</li>
+        <li><b>Not covered:</b> other voice activity (repeaters, VHF/UHF nets, SSB ragchews), personal logs (LoTW, QRZ, Club Log) and anyone not using the modes above. Voice activity is heavily undercounted, so treat this as a lower bound on how many hams are active.</li>
+        <li>A Hawaii resident is counted only when operating in Hawaii. Activations by Hawaii residents on the mainland are not included.</li>
+      </ul>
+      <p id="gen"></p>
+    </div>
+  </details>
+  <footer>This is a beta version. Data and features may change.<br>Created with Aloha by <a href="https://www.qrz.com/db/AH7A" target="_blank" rel="noopener" style="color:inherit">AH7A</a> · © 2026 AH7A. All rights reserved.</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+(async function(){
+  let D;
+  try { const r = await fetch('data.json', {cache:'no-cache'}); if (!r.ok) throw 0; D = await r.json(); }
+  catch(e){ document.getElementById('rows').innerHTML = '<tr><td colspan="9" class="empty">Could not load data.json. Please try again later.</td></tr>'; return; }
+
+  const MODE_NAMES = ['CW','Data','Voice','Mode not reported'];
+  const MODE_VARS = ['--s-cw','--s-data','--s-voice','--s-unk'];
+  const STATUS = {R:'Resident', V:'Non-resident', U:'Unverified'};
+  const ISL_ORDER = ['Oahu','Hawaii (Big Island)','Maui','Kauai','Molokai','Lanai'];
+  const fmt = n => n.toLocaleString('en-US');
+  const asof = new Date(D.asof + 'T00:00:00Z');
+  const startOff = Math.round((asof - new Date(D.start + 'T00:00:00Z')) / 864e5);  // index of asof day
+
+  const state = {period:7, mode:'all', status:'all', island:'all', q:'', sort:'days', shown:100};
+
+  // filters
+  const isel = document.getElementById('f-island');
+  ISL_ORDER.forEach(i => isel.add(new Option(i, i)));
+  function seg(id, key, cast){
+    const el = document.getElementById(id);
+    const sync = () => el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v) === String(state[key])));
+    el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state[key] = cast(b.dataset.v); state.shown = 100; sync(); render(); });
+    sync();
+  }
+  seg('f-period','period',Number); seg('f-mode','mode',v => v==='all'?'all':Number(v)); seg('f-status','status',String);
+  isel.addEventListener('change', () => { state.island = isel.value; state.shown = 100; render(); });
+  document.getElementById('f-q').addEventListener('input', e => { state.q = e.target.value.trim().toUpperCase(); state.shown = 100; render(); });
+  document.querySelectorAll('th.sortable').forEach(th => th.addEventListener('click', () => { state.sort = th.dataset.k; render(); }));
+  document.querySelector('#more button').addEventListener('click', () => { state.shown += 100; render(); });
+
+  function compute(){
+    const minDay = startOff - state.period + 1;
+    const agg = new Map();
+    for (const [si, day, mode, src, q, s, ci = 0, nr = 0] of D.events){
+      if (day < minDay || day > startOff) continue;
+      if (state.mode !== 'all' && mode !== state.mode) continue;
+      let a = agg.get(si);
+      if (!a){ a = {si, days:new Set(), qsos:0, spots:0, ci:0, nr:0, modeDays:[new Set(),new Set(),new Set(),new Set()]}; agg.set(si, a); }
+      a.days.add(day); a.qsos += q; a.spots += s; a.ci += ci; a.nr += nr; a.modeDays[mode].add(day);
+    }
+    return [...agg.values()];
+  }
+
+  const tip = document.getElementById('tip');
+  function showTip(e, html){ tip.innerHTML = html; tip.style.display = 'block';
+    const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8);
+    tip.style.left = x + 'px'; tip.style.top = y + 'px'; }
+  function hideTip(){ tip.style.display = 'none'; }
+
+  function render(){
+    const all = compute();
+    // tiles (respect period + mode, ignore status/island/search for context)
+    const res = all.filter(a => D.stations[a.si][1] === 'R');
+    document.getElementById('t-active').textContent = fmt(all.length);
+    document.getElementById('t-active-n').textContent = `${fmt(res.length)} residents · ${fmt(all.length - res.length)} non-resident/unverified`;
+    document.getElementById('t-res').textContent = fmt(res.length);
+    document.getElementById('t-res-n').textContent = `of ${fmt(D.licensed)} licensed in Hawaii (${(100*res.length/D.licensed).toFixed(1)}%)`;
+    document.getElementById('t-qso').textContent = fmt(all.reduce((t,a) => t + a.qsos, 0));
+    const ciTot = all.reduce((t,a) => t + a.ci, 0), ciSt = all.filter(a => a.ci).length;
+    document.getElementById('t-ci').textContent = fmt(ciTot);
+    document.getElementById('t-ci-n').textContent = `40meter.net HF nets · ${fmt(ciSt)} stations`;
+    document.getElementById('t-spots').textContent = fmt(all.reduce((t,a) => t + a.spots, 0));
+
+    // islands
+    const byI = {}; res.forEach(a => { const i = D.stations[a.si][2]; byI[i] = (byI[i]||0) + 1; });
+    const iel = document.getElementById('islands'); iel.innerHTML = '';
+    const maxPct = Math.max(1, ...ISL_ORDER.map(i => 100*(byI[i]||0)/(D.licensedByIsland[i]||1)));
+    ISL_ORDER.forEach(i => {
+      const n = byI[i]||0, L = D.licensedByIsland[i]||0, pct = L ? 100*n/L : 0;
+      const row = document.createElement('div'); row.style.display = 'contents';
+      row.innerHTML = `<div class="name">${i}</div><div class="track"><div class="bar" style="width:${(pct/maxPct*100).toFixed(1)}%"></div></div><div class="val">${pct.toFixed(1)}% · ${fmt(n)}/${fmt(L)}</div>`;
+      row.querySelector('.track').addEventListener('mousemove', e => showTip(e, `<b>${i}</b><div class="row"><span>Active residents</span><b>${fmt(n)}</b></div><div class="row"><span>Licensed</span><b>${fmt(L)}</b></div><div class="row"><span>Share active</span><b>${pct.toFixed(1)}%</b></div>`));
+      row.querySelector('.track').addEventListener('mouseleave', hideTip);
+      iel.appendChild(row);
+    });
+
+    // table
+    let rows = all.filter(a => {
+      const s = D.stations[a.si];
+      if (state.status !== 'all' && (state.status === 'V' ? s[1] === 'R' : s[1] !== state.status)) return false;
+      if (state.island !== 'all' && s[2] !== state.island) return false;
+      if (state.q && !s[0].includes(state.q)) return false;
+      return true;
+    });
+    const key = a => ({days:[a.days.size, a.ci, a.qsos, a.spots], qsos:[a.qsos, a.days.size, a.ci, a.spots], ci:[a.ci, a.days.size, a.qsos, a.spots], spots:[a.spots, a.days.size, a.qsos, a.ci]})[state.sort];
+    rows.sort((a,b) => { const ka = key(a), kb = key(b); for (let i=0;i<4;i++) if (kb[i] !== ka[i]) return kb[i]-ka[i]; return D.stations[a.si][0] < D.stations[b.si][0] ? -1 : 1; });
+    document.querySelectorAll('th.sortable').forEach(th => th.dataset.k === state.sort ? th.setAttribute('aria-sort','descending') : th.removeAttribute('aria-sort'));
+
+    const tb = document.getElementById('rows'); tb.innerHTML = '';
+    if (!rows.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">No activity matches these filters.</td></tr>'; }
+    let rank = 0, prev = null;
+    rows.slice(0, state.shown).forEach((a, i) => {
+      const s = D.stations[a.si]; const k = key(a).join(',');
+      if (k !== prev){ rank = i + 1; prev = k; }
+      const md = a.modeDays.map(x => x.size), tot = md.reduce((x,y) => x+y, 0) || 1;
+      const order = [2,0,1,3];
+      const mix = order.filter(m => md[m]).map(m => `<span style="flex:${md[m]};background:var(${MODE_VARS[m]})"></span>`).join('');
+      const loc = s[1] === 'R' ? `${s[3]}${s[2] && s[2] !== 'Other' ? ', ' + s[2] : ''}` : (s[3] || '');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="rank">${rank}</td>
+        <td><a class="call" href="https://www.qrz.com/db/${encodeURIComponent(s[0])}" target="_blank" rel="noopener">${s[0]}</a></td>
+        <td><span class="badge b-${s[1]}">${STATUS[s[1]]}</span></td>
+        <td class="loc hide-sm">${loc}</td>
+        <td class="num">${fmt(a.days.size)}</td><td class="num">${a.qsos ? fmt(a.qsos) : '–'}</td><td class="num">${a.ci ? fmt(a.ci) + (a.nr ? ` <span style="font-size:11px;color:var(--text-muted)" title="Times as net control station">(${a.nr} NCS)</span>` : '') : '–'}</td><td class="num">${a.spots ? fmt(a.spots) : '–'}</td>
+        <td class="hide-sm"><div class="mix">${mix}</div></td>`;
+      const mixEl = tr.querySelector('.mix');
+      mixEl.addEventListener('mousemove', e => showTip(e, `<b>${s[0]}</b> – active days by mode` + order.filter(m => md[m]).map(m => `<div class="row"><span><i style="background:var(${MODE_VARS[m]})"></i>${MODE_NAMES[m]}</span><b>${md[m]}</b></div>`).join('')));
+      mixEl.addEventListener('mouseleave', hideTip);
+      tb.appendChild(tr);
+    });
+    document.getElementById('more').hidden = rows.length <= state.shown;
+  }
+
+  const per = new Date(D.start + 'T00:00:00Z');
+  document.getElementById('sub').textContent = `On-air activity of amateur radio operators in Hawaii, from public logs and on-air reports. Data through ${asof.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'})}.`;
+  document.getElementById('gen').textContent = `Data covers ${per.toLocaleDateString('en-US',{timeZone:'UTC'})} – ${asof.toLocaleDateString('en-US',{timeZone:'UTC'})}. Licensee list: FCC ULS amateur database (${fmt(D.licensed)} active Hawaii licenses). Updated ${D.generated.replace('T',' ')} UTC.`;
+  const SRCN = {fcc:'FCC licenses', net40:'40meter.net nets', rbn:'Reverse Beacon Network', pota:'POTA activations', psk:'PSK Reporter', sota:'SOTA', pota_hunter:'POTA hunters'};
+  if (D.sources) document.getElementById('gen').textContent += ' Source updates: ' + Object.entries(SRCN).filter(([k]) => D.sources[k]).map(([k,n]) => `${n} ${D.sources[k].updated.slice(0,10)}`).join(' · ') + '.';
+  render();
+})();
+</script>
+</body>
+</html>
