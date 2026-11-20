@@ -99,7 +99,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     <div class="card tile"><div class="k">Active stations</div><div class="v" id="t-active">–</div><div class="n" id="t-active-n"></div></div>
     <div class="card tile"><div class="k">Active resident hams</div><div class="v" id="t-res">–</div><div class="n" id="t-res-n"></div></div>
     <div class="card tile"><div class="k">Logged QSOs</div><div class="v" id="t-qso">–</div><div class="n">POTA (activator &amp; hunter) and SOTA</div></div>
-    <div class="card tile"><div class="k">Net check-ins</div><div class="v" id="t-ci">–</div><div class="n" id="t-ci-n">40meter.net HF nets</div></div>
+    <div class="card tile"><div class="k">Net check-ins</div><div class="v" id="t-ci">–</div><div class="n" id="t-ci-n">40meter.net nets</div></div>
     <div class="card tile"><div class="k">Times heard on air</div><div class="v" id="t-spots">–</div><div class="n">Reverse Beacon Network &amp; PSK Reporter</div></div>
   </div>
 
@@ -121,7 +121,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
         <th>#</th><th>Callsign</th><th>Status</th><th class="hide-sm">Location</th>
         <th class="num sortable" data-k="days" title="Distinct days with any logged or heard activity">Active days</th>
         <th class="num sortable" data-k="qsos" title="QSOs from POTA and SOTA activation logs, plus POTA hunter QSOs logged by activators">Logged QSOs</th>
-        <th class="num sortable" data-k="ci" title="Check-ins to 40meter.net HF nets (Aloha, Hi-Noon, Afternoon and others)">Net check-ins</th>
+        <th class="num sortable" data-k="ci" title="Check-ins to nets logged on 40meter.net: HF, VHF/UHF and DMR">Net check-ins</th>
         <th class="num sortable" data-k="spots" title="Times decoded by Reverse Beacon Network and PSK Reporter receivers">Times heard</th>
         <th class="hide-sm">Mode mix</th>
       </tr></thead>
@@ -138,7 +138,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
         <li><b>Ranking:</b> stations are ranked by <b>active days</b>, meaning distinct days on which they made a logged QSO or were heard on the air. Ties are broken by net check-ins, then logged QSOs, then times heard. Click a column header to rank by that column instead.</li>
         <li><b>Logged QSOs</b> come from the public <a href="https://pota.app">Parks on the Air</a> and <a href="https://www.sota.org.uk">Summits on the Air</a> logs for activations of Hawaii parks and summits. These are real contacts. SOTA doesn't report modes, so SOTA QSOs only appear under "All".</li>
         <li><b>POTA hunter QSOs</b> are contacts with park activators anywhere in the world, as logged by the activator. Hunters don't need to upload anything. POTA's public profile shows only a ham's 25 most recent hunter QSOs, and only for hams with a POTA account. So this covers about 120 Hawaii hams, history starts at each one's latest 25 contacts, and new contacts are captured each day going forward. The station's location isn't recorded, so residents are assumed to be hunting from home.</li>
-        <li><b>Net check-ins</b> come from the public <a href="https://40meter.net">40meter.net</a> HF net logs (Aloha, Hi-Noon and Afternoon nets on 7.090 MHz, plus Bandhopper, Mesh and ARES nets). Each check-in counts as a voice active day for that station, and net control is shown separately. 40meter.net only publishes the current month, so net data starts November 1, 2026.</li>
+        <li><b>Net check-ins</b> come from the public net logs on <a href="https://40meter.net">40meter.net</a>. These include the HF nets (Aloha, Hi-Noon and Afternoon nets on 7.090 MHz, plus Bandhopper, Mesh, ARES, 10-10 and HF hospital nets) and the VHF/UHF and digital nets (EARC Evening Net, BIARC, PRRC, East Hawaii ARES, the Hawaii DMR Net on TG 311551, C4FM and simplex nets). Each check-in counts as an active day for that station: voice for most nets, data for Winlink nets. Net control is shown separately. 40meter.net only keeps recent nets, so net data starts in late October / November 2026.</li>
         <li><b>Times heard</b> comes from the <a href="https://www.reversebeacon.net">Reverse Beacon Network</a> (mostly CW, plus some FT8/RTTY) and <a href="https://pskreporter.info">PSK Reporter</a> (FT8, FT4, JS8 and other data modes, counted when the sending station's grid is in Hawaii). These count automatic decodes of a station's signal, not QSOs. Beacons and WSPR are excluded. PSK Reporter data starts November 1, 2026.</li>
         <li><b>Residents</b> are callsigns with an active FCC license and a Hawaii mailing address. Island is taken from the ZIP code. <b>Non-residents</b> are either operating from Hawaii (a POTA/SOTA activation here, or signing /KH6) with a license registered elsewhere, or checking into a Hawaii net with a license registered elsewhere. <b>Unverified</b> means heard with a Hawaii prefix but not found in the active FCC database. These may be expired licenses or callsigns the receivers decoded incorrectly.</li>
         <li><b>Not covered:</b> other voice activity (repeaters, VHF/UHF nets, SSB ragchews), personal logs (LoTW, QRZ, Club Log) and anyone not using the modes above. Voice activity is heavily undercounted, so treat this as a lower bound on how many hams are active.</li>
@@ -212,7 +212,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     document.getElementById('t-qso').textContent = fmt(all.reduce((t,a) => t + a.qsos, 0));
     const ciTot = all.reduce((t,a) => t + a.ci, 0), ciSt = all.filter(a => a.ci).length;
     document.getElementById('t-ci').textContent = fmt(ciTot);
-    document.getElementById('t-ci-n').textContent = `40meter.net HF nets · ${fmt(ciSt)} stations`;
+    document.getElementById('t-ci-n').textContent = `40meter.net nets · ${fmt(ciSt)} stations`;
     document.getElementById('t-spots').textContent = fmt(all.reduce((t,a) => t + a.spots, 0));
 
     // islands
