@@ -4,27 +4,27 @@
   "updated": "2026-11-20T08:14+00:00"
  },
  "net40": {
-  "note": "66 nets on the current page, 66 stored",
-  "updated": "2026-11-20T08:14+00:00"
+  "note": "109 nets on the log pages, 108 stored",
+  "updated": "2026-11-20T10:07+00:00"
  },
  "pota": {
   "note": "102 parks, 2674 activations",
-  "updated": "2026-11-20T08:15+00:00"
+  "updated": "2026-11-20T10:08+00:00"
  },
  "pota_hunter": {
-  "note": "121 profiles, +708 new QSOs",
-  "updated": "2026-11-20T08:16+00:00"
+  "note": "121 profiles, +710 new QSOs",
+  "updated": "2026-11-20T10:09+00:00"
  },
  "psk": {
   "note": "152 archive files processed",
   "updated": "2026-11-20T07:25+00:00"
  },
  "rbn": {
-  "note": "through 2026-11-18",
-  "updated": "2026-11-20T08:14+00:00"
+  "note": "through 2026-11-19",
+  "updated": "2026-11-20T10:07+00:00"
  },
  "sota": {
   "note": "261 activations",
-  "updated": "2026-11-20T08:16+00:00"
+  "updated": "2026-11-20T10:09+00:00"
  }
 }
