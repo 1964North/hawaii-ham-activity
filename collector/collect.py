@@ -101,7 +101,8 @@ def update_fcc():
     hi_path = os.path.join(HIST, 'hi_licensees.json')
     meta_path = os.path.join(CACHE, 'fcc_meta.json')   # file times are reset by the CI cache, so store the date
     fresh = False
-    if os.path.exists(state_path) and os.path.exists(hi_path) and os.path.exists(meta_path):
+    names_path = os.path.join(CACHE, 'fcc_names.json')
+    if all(os.path.exists(x) for x in (state_path, hi_path, meta_path, names_path)):
         with open(meta_path) as f: got = dt.date.fromisoformat(json.load(f)['downloaded'])
         fresh = (TODAY - got).days < FCC_MAX_AGE_DAYS
     if fresh:
@@ -122,11 +123,12 @@ def update_fcc():
                     yield line.rstrip('\r\n').split('|')
         active = {f[1] for f in rows('HD.dat') if len(f) > 5 and f[5] == 'A'}
         cls = {f[1]: f[5] for f in rows('AM.dat') if len(f) > 5}
-        state, hi = {}, {}
+        state, hi, names = {}, {}, {}
         for f in rows('EN.dat'):
             if len(f) < 19 or f[1] not in active: continue
             call = f[4]
             state[call] = f[17]
+            names[call] = f[7] if (f[5] == 'CL' or not f[8]) else ' '.join(x for x in (f[8], f[10], f[11]) if x)
             if f[17] == 'HI':
                 z5 = f[18][:5]
                 island = ZIP_ISLAND.get(z5) or ('Oahu' if z5.startswith('968') else 'Other')
@@ -134,10 +136,33 @@ def update_fcc():
     if len(hi) < 1000:
         raise RuntimeError(f'FCC: only {len(hi)} Hawaii licensees parsed - refusing to overwrite')
     with open(state_path, 'w') as f: json.dump(state, f, separators=(',', ':'))
+    with open(names_path, 'w') as f: json.dump(names, f, separators=(',', ':'))
     with open(meta_path, 'w') as f: json.dump({'downloaded': TODAY.isoformat()}, f)
     save('hi_licensees.json', hi)
     ok('fcc', f'{len(hi)} active Hawaii licenses')
     log(f'FCC: {len(hi)} Hawaii licensees, {len(state)} total')
+
+def fcc_names():
+    p = os.path.join(CACHE, 'fcc_names.json')
+    if os.path.exists(p):
+        with open(p) as f: return json.load(f)
+    return {}
+
+ROMAN = {'II', 'III', 'IV', 'VI', 'VII', 'VIII'}
+def nice_name(n):
+    """FCC names are mostly ALL CAPS. Title-case them with a few fixes (McKenney, III, Pu'u)."""
+    if not n or not n.isupper(): return n
+    out = []
+    for w in n.split():
+        if w.strip('.,') in ROMAN: out.append(w); continue
+        t = w.capitalize()
+        if t.startswith('Mc') and len(t) > 2: t = 'Mc' + t[2:].capitalize()
+        if "'" in t:
+            a, b = t.split("'", 1)
+            t = a + "'" + (b.capitalize() if len(a) == 1 and len(b) >= 3 else b.lower())   # O'Brien, but Pu'u O'o
+        if '-' in t: t = '-'.join(x.capitalize() for x in t.split('-'))
+        out.append(t)
+    return ' '.join(out)
 
 def fcc_state():
     p = os.path.join(CACHE, 'fcc_state.json')
@@ -411,6 +436,88 @@ def update_optout():
     ok('optout', f'{len(hidden)} callsign(s) hidden, {len(no_name)} name(s) hidden')
     log(f'Opt-out: {len(hidden)} hidden, {len(no_name)} names hidden')
 
+
+# ---------------------------------------------------------------- achievements
+ACH_START = dt.date.fromisoformat(os.environ.get('ACH_START', '2026-12-01'))   # env override only for testing
+ACH_RULES_VERSION = '1.0'
+ACH = {   # key: (short code, first levels, step after the last first level)
+    'consec': ('CD', [7, 30], 30),
+    'onair':  ('OTA', [25, 50, 100], 100),
+    'netreg': ('NR', [25, 50, 100], 100),
+    'ncs':    ('NCS', [10, 25, 50], 50),
+    'modes':  ('AM', [1, 6, 12, 24], 12),
+}
+M_CW, M_DATA, M_VOICE = 1, 2, 4
+
+def levels_upto(key, n):
+    _, first, stepv = ACH[key]
+    out = [l for l in first if l <= n]
+    l = first[-1] + stepv
+    while l <= n: out.append(l); l += stepv
+    return out
+
+def update_achievements(ev, start, eligible, hidden, no_name):
+    """Keep a permanent per-day activity record from ACH_START on (history/activity_days.json),
+    refreshed for the days still covered by the collected history, and derive all achievements from it."""
+    days = load('activity_days.json', {})          # call -> {date: [mode bits, check-ins, nets run]}
+    window_first = max(ACH_START, start)
+    fresh = collections.defaultdict(dict)
+    for (call, off, mode, src), v in ev.items():
+        d = start + dt.timedelta(days=off)
+        if d < window_first or d > TODAY or call not in eligible: continue
+        rec = fresh[call].setdefault(d.isoformat(), [0, 0, 0])
+        rec[0] |= {0: M_CW, 1: M_DATA, 2: M_VOICE}.get(mode, 0)
+        rec[1] += v[2]; rec[2] += v[3]
+    # replace the re-derived window, keep older (frozen) days
+    wf = window_first.isoformat()
+    for call in set(days) | set(fresh):
+        kept = {d: r for d, r in days.get(call, {}).items() if d < wf}
+        kept.update(fresh.get(call, {}))
+        if kept: days[call] = kept
+        else: days.pop(call, None)
+    if TODAY >= ACH_START: save('activity_days.json', days)
+    # days with no data at all from anyone = collection outage -> don't break consecutive runs
+    all_days = {d for c in days.values() for d in c}
+    earned, totals = {}, {}
+    for call, recs in days.items():
+        if call in hidden or call not in eligible: continue
+        dates = sorted(recs)
+        if not dates: continue
+        e = [('welcome', 0, dates[0])]
+        run = best = active = ci = nr = 0; prev = None; months = {}; qualified = 0
+        def hit(key, new, old, d):
+            for l in levels_upto(key, new):
+                if l > old: e.append((key, l, d))
+        for ds in dates:
+            d = dt.date.fromisoformat(ds); bits, c_in, n_run = recs[ds]
+            if prev is not None:
+                gap = [prev + dt.timedelta(days=i) for i in range(1, (d - prev).days)]
+                run = run + 1 if all(g.isoformat() not in all_days for g in gap) else 1
+            else: run = 1
+            prev = d
+            if run > best: hit('consec', run, best, ds); best = run
+            hit('onair', active + 1, active, ds); active += 1
+            if c_in: hit('netreg', ci + c_in, ci, ds); ci += c_in
+            if n_run: hit('ncs', nr + n_run, nr, ds); nr += n_run
+            mk = ds[:7]; had = months.get(mk, 0) == 7
+            months[mk] = months.get(mk, 0) | bits
+            if not had and months[mk] == 7: hit('modes', qualified + 1, qualified, ds); qualified += 1
+        earned[call] = e
+        current = run if prev >= TODAY - dt.timedelta(days=1) else 0       # run still alive (active today or yesterday)
+        totals[call] = {'consec': best, 'run': current,
+                        'onair': active, 'netreg': ci, 'ncs': nr, 'modes': qualified}
+    record = [{'call': c, 'achievement': k, 'level': l, 'date': d,
+               'certificate': f"{ACH[k][0] if k != 'welcome' else 'EKM'}-{l or 1}-{c}", 'rules': ACH_RULES_VERSION}
+              for c, e in sorted(earned.items()) for k, l, d in e]
+    if TODAY >= ACH_START: save('achievements.json', record)
+    names = fcc_names()
+    out = {}
+    for c, e in earned.items():
+        out[c] = {'e': [[k, l, d] for k, l, d in e], 't': totals[c]}
+        if c not in no_name and names.get(c): out[c]['n'] = nice_name(names[c])
+    log(f'Achievements: {len(record)} earned by {len(earned)} hams' if TODAY >= ACH_START else f'Achievements: start {ACH_START}')
+    return {'start': ACH_START.isoformat(), 'rules': ACH_RULES_VERSION, 'calls': out if TODAY >= ACH_START else {}}
+
 # ---------------------------------------------------------------- build data.json
 def net_utc_date(n):
     """40meter.net logs give the Hawaii date and opening time; convert to the UTC date."""
@@ -485,6 +592,14 @@ def build():
 
     optout = load('optout.json', {'hidden': [], 'no_name': []})
     hidden = set(optout['hidden'])
+    allcalls = {k[0] for k in ev}
+    eligible = {c for c in allcalls if c in hi or c in fstate or c in seen_hi_op or c in net_calls}   # not 'Unverified'
+    try:
+        ach = update_achievements(ev, start, eligible, hidden, set(optout['no_name']))
+        ok('achievements', f"start {ACH_START}" + (f", {sum(len(v['e']) for v in ach['calls'].values())} earned" if ach['calls'] else ''))
+    except Exception as e:
+        traceback.print_exc(); ach = None
+        status.setdefault('achievements', {})['error'] = {'at': dt.datetime.now(dt.timezone.utc).isoformat(timespec='minutes'), 'message': f'{type(e).__name__}: {e}'[:400]}
     for k in [k for k in ev if k[0] in hidden]: del ev[k]          # opted out: not shown at all
     calls = sorted({k[0] for k in ev})
     idx = {c: i for i, c in enumerate(calls)}
@@ -502,6 +617,7 @@ def build():
         'sources': status, 'stations': stations,
         'noName': [c for c in optout['no_name'] if c in idx],
         'forms': {'optout': load_config().get('optout_form_url', '')},
+        'ach': ach,
         'events': [[idx[k[0]], k[1], k[2], k[3], *v] for k, v in ev.items()],
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
