@@ -378,7 +378,7 @@ def load_config():
 
 def update_optout():
     """Read the published Google Form responses (CSV) and apply them in time order.
-    Requests: hide/show in ranking + awards, hide/show name on certificates.
+    Requests: hide/show in the list + achievements, hide/show name on certificates.
     If the sheet can't be read, the last known lists stay in force (nobody is un-hidden by accident)."""
     cfg = load_config(); url = cfg.get('optout_csv_url', '').strip()
     state = load('optout.json', {'hidden': [], 'no_name': []})
