@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hawaii Ham Radio Activity (Beta)</title>
+<script>try{var t=localStorage.getItem('theme');if(t&&t!=='auto')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <style>
 :root{
   --surface-0:#f4f3ef; --surface-1:#fcfcfb; --border:#e3e1da; --grid:#ecebe6;
@@ -11,16 +12,27 @@
   --accent:#2a78d6; --accent-soft:#e6f0fb;
   --s-cw:#2a78d6; --s-data:#eb6834; --s-voice:#1baf7a; --s-unk:#eda100;
   --badge-r:#e6f0fb; --badge-r-t:#1c5cab; --badge-v:#fdeee6; --badge-v-t:#9a3d14; --badge-u:#efeee9; --badge-u-t:#5c5b55;
+  --note-bg:#fff6dc; --note-border:#f0d58a; --note-text:#5e4500;
   color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root{
+@media (prefers-color-scheme: dark){:root:not([data-theme=light]){
   --surface-0:#121211; --surface-1:#1a1a19; --border:#33322f; --grid:#2a2a28;
   --text-primary:#f0efec; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
   --accent:#3987e5; --accent-soft:#1d2b3d;
   --s-cw:#3987e5; --s-data:#d95926; --s-voice:#199e70; --s-unk:#c98500;
   --badge-r:#1d2b3d; --badge-r-t:#9ec5f4; --badge-v:#3a2418; --badge-v-t:#f3b495; --badge-u:#2a2a28; --badge-u-t:#c3c2b7;
+  --note-bg:#2b2412; --note-border:#5c4a17; --note-text:#f0d58a;
   color-scheme:dark;
 }}
+:root[data-theme=dark]{
+  --surface-0:#121211; --surface-1:#1a1a19; --border:#33322f; --grid:#2a2a28;
+  --text-primary:#f0efec; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
+  --accent:#3987e5; --accent-soft:#1d2b3d;
+  --s-cw:#3987e5; --s-data:#d95926; --s-voice:#199e70; --s-unk:#c98500;
+  --badge-r:#1d2b3d; --badge-r-t:#9ec5f4; --badge-v:#3a2418; --badge-v-t:#f3b495; --badge-u:#2a2a28; --badge-u-t:#c3c2b7;
+  --note-bg:#2b2412; --note-border:#5c4a17; --note-text:#f0d58a;
+  color-scheme:dark;
+}
 *{box-sizing:border-box}
 body{margin:0;background:var(--surface-0);color:var(--text-primary);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
@@ -54,6 +66,10 @@ th{font-size:12px;color:var(--text-muted);text-align:left;font-weight:600;paddin
 th.num,td.num{text-align:right}
 th.sortable{cursor:pointer;user-select:none}
 th.sortable[aria-sort]{color:var(--text-primary)}
+.seg.small button{padding:4px 10px;font-size:12.5px}
+tr.grp td{background:var(--surface-0);color:var(--text-secondary);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px}
+tr.grp td span{font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-muted);margin-left:6px}
+td.heard{white-space:nowrap;color:var(--text-secondary)}
 td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:middle}
 td.rank{color:var(--text-muted);width:44px}
 a.call{color:var(--text-primary);font-weight:650;text-decoration:none;letter-spacing:.02em}
@@ -75,12 +91,32 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
 .method{color:var(--text-secondary)} .method li{margin:4px 0}
 .tablewrap{overflow-x:auto}
 @media (max-width:640px){.hide-sm{display:none}.isl{grid-template-columns:110px 1fr 90px}}
+
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px 16px;flex-wrap:wrap;margin-bottom:18px}
+.head .sub{margin:0}
+.theme{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)}
+.theme .seg button{padding:4px 10px;font-size:12px}
+.note{background:var(--note-bg);border:1px solid var(--note-border);color:var(--note-text);border-radius:10px;padding:10px 14px;margin:0 0 16px;font-size:13.5px}
+.note a{color:inherit}
+.rules h3{font-size:14px;margin:16px 0 6px}
+.rules table{width:auto;min-width:60%}
+.rules td,.rules th{padding:6px 10px}
+.rules li{margin:4px 0}
+.method a{color:var(--accent)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Hawaii Ham Radio Activity <span class="beta">Beta</span></h1>
-  <p class="sub" id="sub">Amateur radio operators active on the air in Hawaii, from public logs and on-air reports.</p>
+  <div class="head">
+    <div>
+      <h1>Hawaii Ham Radio Activity <span class="beta">Beta</span></h1>
+      <p class="sub" id="sub">Amateur radio operators active on the air in Hawaii, from public logs and on-air reports.</p>
+    </div>
+    <div class="theme" role="group" aria-label="Color theme"><span>Theme</span>
+      <div class="seg" id="theme"><button data-v="auto">Auto</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div>
+    </div>
+  </div>
+  <div class="note" role="note"><b>Not all activity is shown.</b> This page only sees activity that appears in public sources: net logs on 40meter.net, POTA and SOTA logs, and the Reverse Beacon Network and PSK Reporter spotting networks. Repeater contacts, ragchews, contests, and QSOs kept in personal logs (LoTW, QRZ, Club Log) are not visible here. A ham who is missing or shows little activity here may still be very active on the air. <a href="#how">How this works</a></div>
 
   <div class="filters" role="group" aria-label="Filters">
     <div class="fgroup"><span class="flabel">Period</span>
@@ -112,13 +148,15 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
 
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-      <h2 style="margin:0">Ranking</h2>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h2 style="margin:0">On the air in Hawaii</h2>
+        <div class="seg small" id="f-view" role="group" aria-label="Order"><button data-v="recent">Recently active</button><button data-v="az">A–Z</button></div></div>
       <div class="legend" aria-label="Mode legend"><span><i style="background:var(--s-voice)"></i>Voice</span><span><i style="background:var(--s-cw)"></i>CW</span><span><i style="background:var(--s-data)"></i>Data</span><span><i style="background:var(--s-unk)"></i>Mode not reported (SOTA)</span></div>
     </div>
     <div class="tablewrap">
     <table>
       <thead><tr>
-        <th>#</th><th>Callsign</th><th>Status</th><th class="hide-sm">Location</th>
+        <th>Callsign</th><th>Status</th><th class="hide-sm">Location</th>
+        <th class="sortable" data-k="recent" title="Most recent UTC day with any logged or heard activity">Last heard</th>
         <th class="num sortable" data-k="days" title="Distinct days with any logged or heard activity">Active days</th>
         <th class="num sortable" data-k="qsos" title="QSOs from POTA and SOTA activation logs, plus POTA hunter QSOs logged by activators">Logged QSOs</th>
         <th class="num sortable" data-k="ci" title="Check-ins to nets logged on 40meter.net: HF, VHF/UHF and DMR">Net check-ins</th>
@@ -131,24 +169,72 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     <div class="more" id="more" hidden><button type="button">Show more</button></div>
   </div>
 
-  <details class="card">
-    <summary>How this ranking works &amp; its limits</summary>
+  <details class="card" id="how">
+    <summary>How this works &amp; its limits</summary>
     <div class="method">
       <ul>
-        <li><b>Ranking:</b> stations are ranked by <b>active days</b>, meaning distinct days on which they made a logged QSO or were heard on the air. Ties are broken by net check-ins, then logged QSOs, then times heard. Click a column header to rank by that column instead.</li>
+        <li><b>The list:</b> this isn't a contest. By default, hams are listed by when they were last heard, grouped into <b>Heard today</b>, <b>This week</b> and <b>Earlier</b>, like a net roster. Switch to A–Z, or click a column header to sort by that column. <b>Active days</b> are distinct (UTC) days on which a ham made a logged QSO or was heard on the air.</li>
         <li><b>Logged QSOs</b> come from the public <a href="https://pota.app">Parks on the Air</a> and <a href="https://www.sota.org.uk">Summits on the Air</a> logs for activations of Hawaii parks and summits. These are real contacts. SOTA doesn't report modes, so SOTA QSOs only appear under "All".</li>
         <li><b>POTA hunter QSOs</b> are contacts with park activators anywhere in the world, as logged by the activator. Hunters don't need to upload anything. POTA's public profile shows only a ham's 25 most recent hunter QSOs, and only for hams with a POTA account. So this covers about 120 Hawaii hams, history starts at each one's latest 25 contacts, and new contacts are captured each day going forward. The station's location isn't recorded, so residents are assumed to be hunting from home.</li>
         <li><b>Net check-ins</b> come from the public net logs on <a href="https://40meter.net">40meter.net</a>. These include the HF nets (Aloha, Hi-Noon and Afternoon nets on 7.090 MHz, plus Bandhopper, Mesh, ARES, 10-10 and HF hospital nets) and the VHF/UHF and digital nets (EARC Evening Net, BIARC, PRRC, East Hawaii ARES, the Hawaii DMR Net on TG 311551, C4FM and simplex nets). Each check-in counts as an active day for that station: voice for most nets, data for Winlink nets. Net control is shown separately. 40meter.net only keeps recent nets, so net data starts in late October / November 2026.</li>
         <li><b>Times heard</b> comes from the <a href="https://www.reversebeacon.net">Reverse Beacon Network</a> (mostly CW, plus some FT8/RTTY) and <a href="https://pskreporter.info">PSK Reporter</a> (FT8, FT4, JS8 and other data modes, counted when the sending station's grid is in Hawaii). These count automatic decodes of a station's signal, not QSOs. Beacons and WSPR are excluded. PSK Reporter data starts November 1, 2026.</li>
         <li><b>Residents</b> are callsigns with an active FCC license and a Hawaii mailing address. Island is taken from the ZIP code. <b>Non-residents</b> are either operating from Hawaii (a POTA/SOTA activation here, or signing /KH6) with a license registered elsewhere, or checking into a Hawaii net with a license registered elsewhere. <b>Unverified</b> means heard with a Hawaii prefix but not found in the active FCC database. These may be expired licenses or callsigns the receivers decoded incorrectly.</li>
         <li><b>Not covered:</b> other voice activity (repeaters, VHF/UHF nets, SSB ragchews), personal logs (LoTW, QRZ, Club Log) and anyone not using the modes above. Voice activity is heavily undercounted, so treat this as a lower bound on how many hams are active.</li>
+        <li><b>Days are UTC days</b>, as in ham radio logging. A new day starts at 2 pm Hawaii time, so afternoon and evening activity counts toward the next UTC date. Periods like "Last week" are counted in UTC days, and today's UTC day is still in progress.</li>
         <li>A Hawaii resident is counted only when operating in Hawaii. Activations by Hawaii residents on the mainland are not included.</li>
       </ul>
       <p id="gen"></p>
     </div>
   </details>
-  <footer>This is a beta version. Data and features may change.<br>Created with Aloha by <a href="https://www.qrz.com/db/AH7A" target="_blank" rel="noopener" style="color:inherit">AH7A</a> · © 2026 AH7A. All rights reserved.</footer>
+
+  <details class="card rules" id="awards" style="margin-top:16px">
+    <summary>Award rules (version 1.0) · awards start December 1, 2026</summary>
+    <div class="method">
+      <p>The <b>Hawaii Ham Radio Activity Awards</b> recognize hams who are active on the air in Hawaii. Awards are earned automatically from the same public data as the list of active hams. There's nothing to apply for. Certificates can be downloaded from the page.</p>
+      <h3>The awards</h3>
+      <table>
+        <thead><tr><th>Award</th><th>Earned for</th><th>Levels</th></tr></thead>
+        <tbody>
+          <tr><td><b>E Komo Mai – Welcome</b></td><td>First recorded day on the air</td><td>One time. Marked "New Ham" if licensed within the past 12 months.</td></tr>
+          <tr><td><b>Consecutive Days</b></td><td>Active days in a row, without a gap</td><td>7, 30, then every 30 days (60, 90 …)</td></tr>
+          <tr><td><b>On the Air</b></td><td>Total active days</td><td>25, 50, 100, then every 100 (200, 300 …)</td></tr>
+          <tr><td><b>Net Regular</b></td><td>Total net check-ins</td><td>25, 50, 100, then every 100 (200, 300 …)</td></tr>
+          <tr><td><b>Net Control</b></td><td>Nets run as net control station</td><td>10, 25, 50, then every 50 (100, 150 …)</td></tr>
+          <tr><td><b>All Modes</b></td><td>Calendar months with voice, CW and data all used</td><td>1, 6, 12, 24, then every 12 (36, 48 …)</td></tr>
+        </tbody>
+      </table>
+      <h3>How activity is counted</h3>
+      <ul>
+        <li><b>Start:</b> activity counts from <b>December 1, 2026, 00:00 UTC</b>. Earlier activity doesn't count toward awards.</li>
+        <li><b>Days are UTC days,</b> as in ham radio logging. A new day starts at 2 pm Hawaii time.</li>
+        <li><b>Active day:</b> a day with at least one net check-in, POTA or SOTA QSO, POTA hunter QSO logged by an activator, or spot on the Reverse Beacon Network or PSK Reporter.</li>
+        <li><b>All Modes:</b> a month qualifies when it has at least one active day each on voice, CW and data. The days don't need to be the same, and the months don't need to be consecutive. SOTA QSOs don't count here, because SOTA doesn't report the mode.</li>
+        <li><b>Outages:</b> if a data source was unavailable on a given day, that day doesn't break a Consecutive Days run.</li>
+        <li><b>Who can earn awards:</b> Hawaii residents (active FCC license with a Hawaii address) and non-residents operating from or checking into nets in Hawaii. Unverified callsigns, which may be misread by the spotting networks, are excluded.</li>
+      </ul>
+      <h3>Good to know</h3>
+      <ul>
+        <li><b>Only visible activity counts.</b> Awards are based on publicly available activity data. Contacts that don't appear in these sources can't be counted.</li>
+        <li><b>Beta:</b> the program is in a beta phase. Awards, levels and rules may still change, and awards may be corrected if they were based on wrong data, for example a misread callsign.</li>
+        <li><b>No guarantee:</b> this is a volunteer hobby project. It may be changed, paused or ended at any time. Certificates you've downloaded are yours to keep.</li>
+        <li><b>Unofficial:</b> these are unofficial recognition awards with no monetary value. They are not affiliated with or endorsed by POTA, SOTA, the Reverse Beacon Network, PSK Reporter, 40meter.net, the FCC or the ARRL.</li>
+        <li><b>Opt-out and name display:</b> <span id="optout-text">a self-service form for leaving the list and the awards, or for hiding your name on certificates, is coming soon.</span> Requests are applied automatically at the next update.</li>
+      </ul>
+    </div>
+  </details>
+  <footer>This is a beta version. Data and features may change.<span id="optout-foot"></span><br>Created with Aloha by <a href="https://www.qrz.com/db/AH7A" target="_blank" rel="noopener" style="color:inherit">AH7A</a> · © 2026 AH7A. All rights reserved.</footer>
 </div>
+<script>
+(function(){
+  const root = document.documentElement, seg = document.getElementById('theme');
+  let pref = 'auto'; try { pref = localStorage.getItem('theme') || 'auto'; } catch(e) {}
+  const apply = v => { if (v === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', v);
+    seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v))); };
+  apply(pref);
+  seg.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; apply(b.dataset.v);
+    try { localStorage.setItem('theme', b.dataset.v); } catch(e) {} });
+})();
+</script>
 <div id="tip" role="tooltip"></div>
 
 <script>
@@ -163,9 +249,10 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
   const ISL_ORDER = ['Oahu','Hawaii (Big Island)','Maui','Kauai','Molokai','Lanai'];
   const fmt = n => n.toLocaleString('en-US');
   const asof = new Date(D.asof + 'T00:00:00Z');
+  const dayDate = i => new Date(new Date(D.start+'T00:00:00Z').getTime() + i*864e5);
   const startOff = Math.round((asof - new Date(D.start + 'T00:00:00Z')) / 864e5);  // index of asof day
 
-  const state = {period:7, mode:'all', status:'all', island:'all', q:'', sort:'days', shown:100};
+  const state = {period:7, mode:'all', status:'all', island:'all', q:'', sort:'recent', shown:100};
 
   // filters
   const isel = document.getElementById('f-island');
@@ -176,6 +263,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state[key] = cast(b.dataset.v); state.shown = 100; sync(); render(); });
     sync();
   }
+  document.getElementById('f-view').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.sort = b.dataset.v; state.shown = 100; render(); });
   seg('f-period','period',Number); seg('f-mode','mode',v => v==='all'?'all':Number(v)); seg('f-status','status',String);
   isel.addEventListener('change', () => { state.island = isel.value; state.shown = 100; render(); });
   document.getElementById('f-q').addEventListener('input', e => { state.q = e.target.value.trim().toUpperCase(); state.shown = 100; render(); });
@@ -189,8 +277,8 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
       if (day < minDay || day > startOff) continue;
       if (state.mode !== 'all' && mode !== state.mode) continue;
       let a = agg.get(si);
-      if (!a){ a = {si, days:new Set(), qsos:0, spots:0, ci:0, nr:0, modeDays:[new Set(),new Set(),new Set(),new Set()]}; agg.set(si, a); }
-      a.days.add(day); a.qsos += q; a.spots += s; a.ci += ci; a.nr += nr; a.modeDays[mode].add(day);
+      if (!a){ a = {si, last:-1, days:new Set(), qsos:0, spots:0, ci:0, nr:0, modeDays:[new Set(),new Set(),new Set(),new Set()]}; agg.set(si, a); }
+      if (day > a.last) a.last = day; a.days.add(day); a.qsos += q; a.spots += s; a.ci += ci; a.nr += nr; a.modeDays[mode].add(day);
     }
     return [...agg.values()];
   }
@@ -236,25 +324,31 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
       if (state.q && !s[0].includes(state.q)) return false;
       return true;
     });
-    const key = a => ({days:[a.days.size, a.ci, a.qsos, a.spots], qsos:[a.qsos, a.days.size, a.ci, a.spots], ci:[a.ci, a.days.size, a.qsos, a.spots], spots:[a.spots, a.days.size, a.qsos, a.ci]})[state.sort];
-    rows.sort((a,b) => { const ka = key(a), kb = key(b); for (let i=0;i<4;i++) if (kb[i] !== ka[i]) return kb[i]-ka[i]; return D.stations[a.si][0] < D.stations[b.si][0] ? -1 : 1; });
+    const call = a => D.stations[a.si][0];
+    const key = a => ({recent:[a.last], days:[a.days.size, a.ci, a.qsos, a.spots], qsos:[a.qsos, a.days.size, a.ci, a.spots], ci:[a.ci, a.days.size, a.qsos, a.spots], spots:[a.spots, a.days.size, a.qsos, a.ci]})[state.sort] || [];
+    rows.sort((a,b) => { const ka = key(a), kb = key(b); for (let i=0;i<ka.length;i++) if (kb[i] !== ka[i]) return kb[i]-ka[i]; return call(a) < call(b) ? -1 : 1; });
     document.querySelectorAll('th.sortable').forEach(th => th.dataset.k === state.sort ? th.setAttribute('aria-sort','descending') : th.removeAttribute('aria-sort'));
+    document.querySelectorAll('#f-view button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === state.sort)));
+    const group = a => a.last >= startOff ? 'Heard today' : a.last >= startOff - 6 ? 'This week' : 'Earlier';
+    const counts = {}; if (state.sort === 'recent') rows.forEach(a => { const g = group(a); counts[g] = (counts[g]||0) + 1; });
+    const heard = d => d >= startOff ? 'Today' : d === startOff - 1 ? 'Yesterday' : dayDate(d).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
 
     const tb = document.getElementById('rows'); tb.innerHTML = '';
     if (!rows.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">No activity matches these filters.</td></tr>'; }
-    let rank = 0, prev = null;
+    let prevGroup = null;
     rows.slice(0, state.shown).forEach((a, i) => {
-      const s = D.stations[a.si]; const k = key(a).join(',');
-      if (k !== prev){ rank = i + 1; prev = k; }
+      const s = D.stations[a.si];
+      if (state.sort === 'recent'){ const g = group(a); if (g !== prevGroup){ prevGroup = g;
+        const gr = document.createElement('tr'); gr.className = 'grp'; gr.innerHTML = `<td colspan="9">${g}<span>${fmt(counts[g])} ${counts[g] === 1 ? 'ham' : 'hams'}</span></td>`; tb.appendChild(gr); } }
       const md = a.modeDays.map(x => x.size), tot = md.reduce((x,y) => x+y, 0) || 1;
       const order = [2,0,1,3];
       const mix = order.filter(m => md[m]).map(m => `<span style="flex:${md[m]};background:var(${MODE_VARS[m]})"></span>`).join('');
       const loc = s[1] === 'R' ? `${s[3]}${s[2] && s[2] !== 'Other' ? ', ' + s[2] : ''}` : (s[3] || '');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="rank">${rank}</td>
-        <td><a class="call" href="https://www.qrz.com/db/${encodeURIComponent(s[0])}" target="_blank" rel="noopener">${s[0]}</a></td>
+      tr.innerHTML = `<td><a class="call" href="https://www.qrz.com/db/${encodeURIComponent(s[0])}" target="_blank" rel="noopener">${s[0]}</a></td>
         <td><span class="badge b-${s[1]}">${STATUS[s[1]]}</span></td>
         <td class="loc hide-sm">${loc}</td>
+        <td class="heard">${heard(a.last)}</td>
         <td class="num">${fmt(a.days.size)}</td><td class="num">${a.qsos ? fmt(a.qsos) : '–'}</td><td class="num">${a.ci ? fmt(a.ci) + (a.nr ? ` <span style="font-size:11px;color:var(--text-muted)" title="Times as net control station">(${a.nr} NCS)</span>` : '') : '–'}</td><td class="num">${a.spots ? fmt(a.spots) : '–'}</td>
         <td class="hide-sm"><div class="mix">${mix}</div></td>`;
       const mixEl = tr.querySelector('.mix');
@@ -266,9 +360,14 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
   }
 
   const per = new Date(D.start + 'T00:00:00Z');
-  document.getElementById('sub').textContent = `On-air activity of amateur radio operators in Hawaii, from public logs and on-air reports. Data through ${asof.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'})}.`;
+  document.getElementById('sub').textContent = `On-air activity of amateur radio operators in Hawaii, from public logs and on-air reports. Data through ${asof.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'})} (UTC).`;
   document.getElementById('gen').textContent = `Data covers ${per.toLocaleDateString('en-US',{timeZone:'UTC'})} – ${asof.toLocaleDateString('en-US',{timeZone:'UTC'})}. Licensee list: FCC ULS amateur database (${fmt(D.licensed)} active Hawaii licenses). Updated ${D.generated.replace('T',' ')} UTC.`;
-  const SRCN = {fcc:'FCC licenses', net40:'40meter.net nets', rbn:'Reverse Beacon Network', pota:'POTA activations', psk:'PSK Reporter', sota:'SOTA', pota_hunter:'POTA hunters'};
+  const ofu = (D.forms || {}).optout;
+  if (ofu) {
+    document.getElementById('optout-text').innerHTML = `use <a href="${ofu}" target="_blank" rel="noopener">this form</a> to leave the list and the awards, to hide your name on certificates, or to undo either.`;
+    document.getElementById('optout-foot').innerHTML = ` · <a href="${ofu}" target="_blank" rel="noopener" style="color:inherit">Opt out or hide your name</a>`;
+  }
+  const SRCN = {fcc:'FCC licenses', net40:'40meter.net nets', rbn:'Reverse Beacon Network', pota:'POTA activations', psk:'PSK Reporter', optout:'Opt-out form', sota:'SOTA', pota_hunter:'POTA hunters'};
   if (D.sources) document.getElementById('gen').textContent += ' Source updates: ' + Object.entries(SRCN).filter(([k]) => D.sources[k]).map(([k,n]) => `${n} ${(D.sources[k].updated || '–').slice(0,10)}${D.sources[k].error ? ' (latest attempt failed)' : ''}`).join(' · ') + '.';
   render();
 })();
