@@ -58,15 +58,15 @@ From then on it runs on its own at **12:45 pm and 9:45 pm Hawaii time**. GitHub 
 
 ## Self-service opt-out (Google Form)
 
-Hams can leave the list and the awards, or hide their name on certificates, using a Google Form. Requests are applied automatically at the next update. Nothing needs to be done by hand.
+Hams can leave the list and the achievements, or hide their name on certificates, using a Google Form. Requests are applied automatically at the next update. Nothing needs to be done by hand.
 
 ### One-time setup
 
 1. **Create the form.** Go to [forms.google.com](https://forms.google.com) and create a blank form titled **Hawaii Ham Radio Activity – Opt-out**. Add three questions:
    - **Callsign**: short answer, required. Optional: under ⋮ → *Response validation* → *Regular expression* → *Matches* → `^[A-Za-z0-9/]{3,12}$`
    - **What would you like to do?**: multiple choice, required, with exactly these four options:
-     - `Hide me from the list and awards`
-     - `Show me again in the list and awards`
+     - `Hide me from the list and achievements`
+     - `Show me again in the list and achievements`
      - `Hide my name on certificates`
      - `Show my name on certificates`
    - **I confirm that I am the license holder of this callsign**: checkbox, required, one option `Yes`
@@ -83,12 +83,12 @@ Hams can leave the list and the awards, or hide their name on certificates, usin
    ```
    Commit, then run **Actions → Update data → Run workflow** once.
 
-The page then shows the form link in the award rules and in the footer.
+The page then shows the form link in the achievement rules and in the footer.
 
 ### Good to know
 - The **latest request per callsign wins**, so a ham can undo their own request at any time.
 - If the sheet can't be read, **existing opt-outs stay in place**. Nobody is shown again by accident.
-- Hidden callsigns are removed from the page and the awards. The collected history in this repository still contains the public source data, so a ham who opts back in shows up again with their full history.
+- Hidden callsigns are removed from the page and the achievements. The collected history in this repository still contains the public source data, so a ham who opts back in shows up again with their full history.
 - The published CSV contains only the timestamp, callsign and request. No email addresses or names.
 
 ## Day-to-day
