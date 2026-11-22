@@ -17,6 +17,9 @@ Sources
 Every source is collected separately; if one fails, the others still update and
 the page keeps the last good data for the failed one.
 
+Self-service opt-out: config.json (repository root) holds the Google Form link and the
+published CSV of its responses: {"optout_form_url": "...", "optout_csv_url": "..."}
+
 Usage:  python3 collector/collect.py            (run from the repository root)
 Only the Python standard library is needed.
 """
@@ -29,7 +32,7 @@ CACHE = os.path.join(ROOT, '.cache')
 OUT = os.path.join(ROOT, 'docs', 'data.json')
 UA = 'hawaii-ham-activity/1.0 (+https://github.com)'
 HST = dt.timezone(dt.timedelta(hours=-10))
-TODAY = dt.datetime.now(HST).date()
+TODAY = dt.datetime.now(dt.timezone.utc).date()      # all days are UTC days, as in ham logging
 WINDOW_DAYS = 365
 KEEP_DAYS = 400                 # history kept on disk (a bit more than the page shows)
 FCC_MAX_AGE_DAYS = 7
@@ -292,6 +295,7 @@ def update_pota_hunters(hi):
     calls = sorted(hi) if full else idx['profiles']
     log(f'POTA hunters: checking {len(calls)} callsigns ({"full scan" if full else "known profiles"})')
     found, added, errors = set(), 0, 0
+    cutoff = (TODAY - dt.timedelta(days=KEEP_DAYS)).isoformat()
     with concurrent.futures.ThreadPoolExecutor(4) as ex:
         for call, prof in ex.map(fetch_profile, calls):
             if prof == 'error': errors += 1; found.add(call) if call in idx['profiles'] else None; continue
@@ -299,14 +303,13 @@ def update_pota_hunters(hi):
             found.add(call)
             for h in prof.get('recent_activity', {}).get('hunter_qsos', []):
                 k = (call, h['date'], h['callsign'], h['reference'], h['band'], h['mode'])
-                if k not in seen:
+                if k not in seen and h['date'][:10] >= cutoff:      # ignore contacts older than the kept history
                     seen.add(k); hunts.append(list(k)); added += 1
     if full:
         if errors > len(calls) * 0.2: raise RuntimeError(f'POTA hunters: {errors} errors during full scan')
         idx = {'profiles': sorted(found), 'last_full_scan': TODAY.isoformat()}
     else:
         idx['profiles'] = sorted(set(idx['profiles']) | found)
-    cutoff = (TODAY - dt.timedelta(days=KEEP_DAYS)).isoformat()
     hunts = [h for h in hunts if h[1][:10] >= cutoff]
     save('pota_profiles.json', idx, pretty=True)
     save('pota_hunter.json', hunts)
@@ -365,7 +368,59 @@ def update_net40():
     ok('net40', f'{len(nets)} nets on the log pages, {len(out)} stored' + (f' (failed: {", ".join(failed)})' if failed else ''))
     log(f'40meter.net: {len(out)} nets stored')
 
+
+# ---------------------------------------------------------------- self-service opt-out (Google Form)
+def load_config():
+    p = os.path.join(ROOT, 'config.json')
+    if os.path.exists(p):
+        with open(p) as f: return json.load(f)
+    return {}
+
+def update_optout():
+    """Read the published Google Form responses (CSV) and apply them in time order.
+    Requests: hide/show in ranking + awards, hide/show name on certificates.
+    If the sheet can't be read, the last known lists stay in force (nobody is un-hidden by accident)."""
+    cfg = load_config(); url = cfg.get('optout_csv_url', '').strip()
+    state = load('optout.json', {'hidden': [], 'no_name': []})
+    if not url:
+        ok('optout', 'no form configured'); return
+    rows = list(csv.reader(io.StringIO(http(url, timeout=60))))
+    if not rows: raise RuntimeError('opt-out sheet is empty or unreadable')
+    head = [h.strip().lower() for h in rows[0]]
+    ci = next((i for i, h in enumerate(head) if 'call' in h), None)
+    ri = next((i for i, h in enumerate(head) if 'request' in h or 'what would you like' in h), None)
+    ti = next((i for i, h in enumerate(head) if 'timestamp' in h), 0)
+    if ci is None or ri is None: raise RuntimeError(f'opt-out sheet: callsign/request columns not found in {rows[0]}')
+    def ts(r):
+        for fmt in ('%m/%d/%Y %H:%M:%S', '%Y-%m-%d %H:%M:%S', '%d/%m/%Y %H:%M:%S'):
+            try: return dt.datetime.strptime(r[ti].strip(), fmt)
+            except Exception: pass
+        return dt.datetime.min
+    hidden, no_name = set(state['hidden']), set(state['no_name'])
+    for r in sorted(rows[1:], key=ts):
+        if len(r) <= max(ci, ri): continue
+        call = base(re.sub(r'[^A-Za-z0-9/]', '', r[ci]).upper())
+        req = r[ri].lower()
+        if not CALL.match(call): continue
+        if 'hide me' in req: hidden.add(call)
+        elif 'show me' in req: hidden.discard(call)
+        elif 'hide my name' in req: no_name.add(call)
+        elif 'show my name' in req: no_name.discard(call)
+    state = {'hidden': sorted(hidden), 'no_name': sorted(no_name)}
+    save('optout.json', state, pretty=True)
+    ok('optout', f'{len(hidden)} callsign(s) hidden, {len(no_name)} name(s) hidden')
+    log(f'Opt-out: {len(hidden)} hidden, {len(no_name)} names hidden')
+
 # ---------------------------------------------------------------- build data.json
+def net_utc_date(n):
+    """40meter.net logs give the Hawaii date and opening time; convert to the UTC date."""
+    d = dt.date.fromisoformat(n['date'])
+    m = re.match(r'(\d{1,2}):(\d\d)\s*([AP]M)', n.get('opened', '').upper())
+    if not m: return d
+    h = int(m[1]) % 12 + (12 if m[3] == 'PM' else 0)
+    local = dt.datetime(d.year, d.month, d.day, h, int(m[2]), tzinfo=HST)
+    return local.astimezone(dt.timezone.utc).date()
+
 def build():
     hi = load('hi_licensees.json', {})
     fstate = fcc_state()
@@ -418,16 +473,19 @@ def build():
         add(call, dt.date.fromisoformat(date[:10]), HM.get(mode.upper(), 'data'), 'hunt', q=1)
     net_seen, net_calls = set(), set()
     for n in load('net40.json', []):
-        d = dt.date.fromisoformat(n['date'])
+        d = net_utc_date(n)
         name = n['net'].upper()
         mode = 'data' if any(w in name for w in ('WINLINK', 'DIGITAL', 'JS8', 'FT8', 'PACKET', 'VARA')) else 'voice'
         for c in n['calls']:
             b = base(c)
-            k = (b, n['date'], name, n.get('log', 'hf'))      # same net logged twice -> count once
+            k = (b, d, name, n.get('log', 'hf'))              # same net logged twice -> count once
             if k in net_seen: continue
             net_seen.add(k); net_calls.add(b)
             add(b, d, mode, 'net', ci=1, nr=1 if b == base(n['ncs']) else 0)
 
+    optout = load('optout.json', {'hidden': [], 'no_name': []})
+    hidden = set(optout['hidden'])
+    for k in [k for k in ev if k[0] in hidden]: del ev[k]          # opted out: not shown at all
     calls = sorted({k[0] for k in ev})
     idx = {c: i for i, c in enumerate(calls)}
     stations = []
@@ -442,6 +500,8 @@ def build():
         'generated': dt.datetime.now(dt.timezone.utc).isoformat(timespec='minutes').replace('+00:00', ''),
         'licensed': len(hi), 'licensedByIsland': collections.Counter(v['island'] for v in hi.values()),
         'sources': status, 'stations': stations,
+        'noName': [c for c in optout['no_name'] if c in idx],
+        'forms': {'optout': load_config().get('optout_form_url', '')},
         'events': [[idx[k[0]], k[1], k[2], k[3], *v] for k, v in ev.items()],
     }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -472,6 +532,7 @@ def main():
     step('pota', update_pota_activations)
     step('sota', update_sota)
     step('pota_hunter', update_pota_hunters, hi)
+    step('optout', update_optout)
     save('status.json', status, pretty=True)
     step('build', build)
     if failures: log('Failed steps:', ', '.join(failures))
