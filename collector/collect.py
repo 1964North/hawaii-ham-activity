@@ -192,8 +192,7 @@ def psk_files():
     now = dt.datetime.now(dt.timezone.utc)
     files = []
     for m in {(now.year, now.month), ((now.replace(day=1) - dt.timedelta(days=1)).year, (now.replace(day=1) - dt.timedelta(days=1)).month)}:
-        try: idx = http(f'https://pskreporter.info/csv/{m[0]}/{m[1]:02d}/', timeout=60)
-        except Exception as e: log('PSK: index failed', m, e); continue
+        idx = http(f'https://pskreporter.info/csv/{m[0]}/{m[1]:02d}/', timeout=60)
         for name in set(re.findall(r'(\d{8}T\d{6}_(?:even|odd)\.tsv\.gz)', idx)):
             t = dt.datetime.strptime(name[:15], '%Y%m%dT%H%M%S').replace(tzinfo=dt.timezone.utc)
             files.append((t, name, f'https://pskreporter.info/csv/{m[0]}/{m[1]:02d}/{name}'))
@@ -201,9 +200,10 @@ def psk_files():
 
 def psk_filter(url):
     """Stream one archive file and keep reports whose sender is in a Hawaii grid (BK/BL)."""
-    cmd = f"curl -sS --fail --max-time 1200 '{url}' | gunzip -c | awk -F'\\t' '$6 ~ /^(BK|BL)/'"
+    cmd = (f"curl -sS --fail --retry 2 --retry-delay 10 --max-time 1200 -A '{UA}' '{url}' "
+           f"| gunzip -c | awk -F'\\t' '$6 ~ /^(BK|BL)/'")
     r = subprocess.run(['bash', '-o', 'pipefail', '-c', cmd], capture_output=True, text=True, errors='replace')
-    if r.returncode != 0: raise RuntimeError(f'PSK: {url} failed: {r.stderr[:200]}')
+    if r.returncode != 0: raise RuntimeError(f'{url.rsplit("/", 1)[-1]}: exit {r.returncode}: {r.stderr.strip()[:250]}')
     return [l.split('\t') for l in r.stdout.splitlines()]
 
 def update_psk():
@@ -215,9 +215,16 @@ def update_psk():
             and f[0] + dt.timedelta(hours=6, minutes=20) < now]          # only complete files
     log(f'PSK: {len(todo)} file(s) to process')
     agg = {(r[0], r[1], r[2]): r for r in psk['rows']}
+    errors = []
     for t, name, url in todo:
         per = collections.Counter(); rx = collections.defaultdict(set)
-        for f in psk_filter(url):
+        try:
+            reports = psk_filter(url)
+        except Exception as e:
+            errors.append(str(e)); log(f'PSK: {e}')
+            if len(errors) >= 3: break            # server unhappy - stop, retry next run
+            continue
+        for f in reports:
             if len(f) < 8 or f[0] == 'flowStartSeconds' or f[3].upper() in PSK_SKIP_MODES: continue
             call = base(f[4]); day = dt.datetime.fromtimestamp(int(f[0]), dt.timezone.utc).date().isoformat()
             k = (call, day, 'cw' if f[3].upper() == 'CW' else 'data')
@@ -233,7 +240,9 @@ def update_psk():
     psk['rows'] = [r for r in agg.values() if r[1] >= cutoff]
     psk['files_done'] = sorted(x for x in done if x[:8] >= cutoff.replace('-', ''))
     save('psk.json', psk)
-    ok('psk', f'{len(psk["files_done"])} archive files processed')
+    if todo and len(errors) >= len(todo) or len(errors) >= 3:
+        raise RuntimeError(f'{len(errors)} file(s) failed, e.g. {errors[0]}')
+    ok('psk', f'{len(psk["files_done"])} archive files processed' + (f', {len(errors)} failed' if errors else ''))
 
 # ---------------------------------------------------------------- POTA / SOTA
 def update_pota_activations():
@@ -323,8 +332,8 @@ def parse_net_log(text):
                 m = re.match(r'#\s*Opened:\s*(.+)', l)
                 if m: n['opened'] = m[1].strip()
                 continue
-            c = l.split()[0].upper()
-            if re.match(r'^[A-Z0-9]{1,3}[0-9][A-Z0-9]*[A-Z](/[A-Z0-9]+)?$', c) and c not in n['calls']:
+            c = re.sub(r'[^A-Z0-9/]', '', l.split()[0].upper()).strip('/')   # drop stray characters
+            if CALL.match(base(c)) and c not in n['calls']:                    # also KH6/G3SEA-style calls
                 n['calls'].append(c)
         if n['date'] and n['calls']: nets.append(n)
     return nets
@@ -447,9 +456,14 @@ def main():
     failures = []
     def step(name, fn, *a):
         if only and name not in only: return
-        try: fn(*a)
-        except Exception:
+        try:
+            fn(*a)
+            if name in status: status[name].pop('error', None)
+        except Exception as e:
             failures.append(name); log(f'!! {name} failed:'); traceback.print_exc()
+            status.setdefault(name, {})['error'] = {
+                'at': dt.datetime.now(dt.timezone.utc).isoformat(timespec='minutes'),
+                'message': f'{type(e).__name__}: {e}'[:400]}
     step('fcc', update_fcc)
     hi = load('hi_licensees.json', {})
     step('net40', update_net40)
