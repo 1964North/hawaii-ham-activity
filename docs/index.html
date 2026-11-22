@@ -269,7 +269,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
   document.getElementById('sub').textContent = `On-air activity of amateur radio operators in Hawaii, from public logs and on-air reports. Data through ${asof.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'})}.`;
   document.getElementById('gen').textContent = `Data covers ${per.toLocaleDateString('en-US',{timeZone:'UTC'})} – ${asof.toLocaleDateString('en-US',{timeZone:'UTC'})}. Licensee list: FCC ULS amateur database (${fmt(D.licensed)} active Hawaii licenses). Updated ${D.generated.replace('T',' ')} UTC.`;
   const SRCN = {fcc:'FCC licenses', net40:'40meter.net nets', rbn:'Reverse Beacon Network', pota:'POTA activations', psk:'PSK Reporter', sota:'SOTA', pota_hunter:'POTA hunters'};
-  if (D.sources) document.getElementById('gen').textContent += ' Source updates: ' + Object.entries(SRCN).filter(([k]) => D.sources[k]).map(([k,n]) => `${n} ${D.sources[k].updated.slice(0,10)}`).join(' · ') + '.';
+  if (D.sources) document.getElementById('gen').textContent += ' Source updates: ' + Object.entries(SRCN).filter(([k]) => D.sources[k]).map(([k,n]) => `${n} ${(D.sources[k].updated || '–').slice(0,10)}${D.sources[k].error ? ' (latest attempt failed)' : ''}`).join(' · ') + '.';
   render();
 })();
 </script>
