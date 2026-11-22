@@ -187,13 +187,13 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     </div>
   </details>
 
-  <details class="card rules" id="awards" style="margin-top:16px">
-    <summary>Award rules (version 1.0) · awards start December 1, 2026</summary>
+  <details class="card rules" id="achievements" style="margin-top:16px">
+    <summary>Achievement rules (version 1.0) · achievements start December 1, 2026</summary>
     <div class="method">
-      <p>The <b>Hawaii Ham Radio Activity Awards</b> recognize hams who are active on the air in Hawaii. Awards are earned automatically from the same public data as the list of active hams. There's nothing to apply for. Certificates can be downloaded from the page.</p>
-      <h3>The awards</h3>
+      <p>The <b>Hawaii Amateur Radio Activity Achievements</b> recognize hams who are active on the air in Hawaii. Achievements are earned automatically from the same public data as the list of active hams. There's nothing to apply for. Certificates can be downloaded from the page.</p>
+      <h3>The achievements</h3>
       <table>
-        <thead><tr><th>Award</th><th>Earned for</th><th>Levels</th></tr></thead>
+        <thead><tr><th>Achievement</th><th>Earned for</th><th>Levels</th></tr></thead>
         <tbody>
           <tr><td><b>E Komo Mai – Welcome</b></td><td>First recorded day on the air</td><td>One time. Marked "New Ham" if licensed within the past 12 months.</td></tr>
           <tr><td><b>Consecutive Days</b></td><td>Active days in a row, without a gap</td><td>7, 30, then every 30 days (60, 90 …)</td></tr>
@@ -205,20 +205,20 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
       </table>
       <h3>How activity is counted</h3>
       <ul>
-        <li><b>Start:</b> activity counts from <b>December 1, 2026, 00:00 UTC</b>. Earlier activity doesn't count toward awards.</li>
+        <li><b>Start:</b> activity counts from <b>December 1, 2026, 00:00 UTC</b>. Earlier activity doesn't count toward achievements.</li>
         <li><b>Days are UTC days,</b> as in ham radio logging. A new day starts at 2 pm Hawaii time.</li>
         <li><b>Active day:</b> a day with at least one net check-in, POTA or SOTA QSO, POTA hunter QSO logged by an activator, or spot on the Reverse Beacon Network or PSK Reporter.</li>
         <li><b>All Modes:</b> a month qualifies when it has at least one active day each on voice, CW and data. The days don't need to be the same, and the months don't need to be consecutive. SOTA QSOs don't count here, because SOTA doesn't report the mode.</li>
         <li><b>Outages:</b> if a data source was unavailable on a given day, that day doesn't break a Consecutive Days run.</li>
-        <li><b>Who can earn awards:</b> Hawaii residents (active FCC license with a Hawaii address) and non-residents operating from or checking into nets in Hawaii. Unverified callsigns, which may be misread by the spotting networks, are excluded.</li>
+        <li><b>Who can earn achievements:</b> Hawaii residents (active FCC license with a Hawaii address) and non-residents operating from or checking into nets in Hawaii. Unverified callsigns, which may be misread by the spotting networks, are excluded.</li>
       </ul>
       <h3>Good to know</h3>
       <ul>
-        <li><b>Only visible activity counts.</b> Awards are based on publicly available activity data. Contacts that don't appear in these sources can't be counted.</li>
-        <li><b>Beta:</b> the program is in a beta phase. Awards, levels and rules may still change, and awards may be corrected if they were based on wrong data, for example a misread callsign.</li>
+        <li><b>Only visible activity counts.</b> Achievements are based on publicly available activity data. Contacts that don't appear in these sources can't be counted.</li>
+        <li><b>Beta:</b> the program is in a beta phase. Achievements, levels and rules may still change, and achievements may be corrected if they were based on wrong data, for example a misread callsign.</li>
         <li><b>No guarantee:</b> this is a volunteer hobby project. It may be changed, paused or ended at any time. Certificates you've downloaded are yours to keep.</li>
-        <li><b>Unofficial:</b> these are unofficial recognition awards with no monetary value. They are not affiliated with or endorsed by POTA, SOTA, the Reverse Beacon Network, PSK Reporter, 40meter.net, the FCC or the ARRL.</li>
-        <li><b>Opt-out and name display:</b> <span id="optout-text">a self-service form for leaving the list and the awards, or for hiding your name on certificates, is coming soon.</span> Requests are applied automatically at the next update.</li>
+        <li><b>Unofficial:</b> these are unofficial achievements with no monetary value. They are not affiliated with or endorsed by POTA, SOTA, the Reverse Beacon Network, PSK Reporter, 40meter.net, the FCC or the ARRL.</li>
+        <li><b>Opt-out and name display:</b> <span id="optout-text">a self-service form for leaving the list and the achievements, or for hiding your name on certificates, is coming soon.</span> Requests are applied automatically at the next update.</li>
       </ul>
     </div>
   </details>
@@ -364,7 +364,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
   document.getElementById('gen').textContent = `Data covers ${per.toLocaleDateString('en-US',{timeZone:'UTC'})} – ${asof.toLocaleDateString('en-US',{timeZone:'UTC'})}. Licensee list: FCC ULS amateur database (${fmt(D.licensed)} active Hawaii licenses). Updated ${D.generated.replace('T',' ')} UTC.`;
   const ofu = (D.forms || {}).optout;
   if (ofu) {
-    document.getElementById('optout-text').innerHTML = `use <a href="${ofu}" target="_blank" rel="noopener">this form</a> to leave the list and the awards, to hide your name on certificates, or to undo either.`;
+    document.getElementById('optout-text').innerHTML = `use <a href="${ofu}" target="_blank" rel="noopener">this form</a> to leave the list and the achievements, to hide your name on certificates, or to undo either.`;
     document.getElementById('optout-foot').innerHTML = ` · <a href="${ofu}" target="_blank" rel="noopener" style="color:inherit">Opt out or hide your name</a>`;
   }
   const SRCN = {fcc:'FCC licenses', net40:'40meter.net nets', rbn:'Reverse Beacon Network', pota:'POTA activations', psk:'PSK Reporter', optout:'Opt-out form', sota:'SOTA', pota_hunter:'POTA hunters'};
