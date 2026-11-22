@@ -10,6 +10,7 @@ Instructions for running and maintaining Hawaii Ham Radio Activity. For an overv
 | `docs/data.json` | The data for the page. It is rebuilt automatically, so don't edit it by hand. |
 | `collector/collect.py` | Script that collects the data from the public sources and builds `data.json`. It needs only plain Python 3, nothing to install. |
 | `history/` | Collected history (net check-ins, Reverse Beacon Network days, POTA, SOTA, FCC list). It is updated automatically. Some sources only show recent data, so this folder is what makes the month and year views possible. |
+| `history/activity_days.json`, `history/achievements.json` | Permanent record of each ham's active days since the achievements started, and every achievement earned. Unlike the other history files, these are never trimmed. |
 | `.github/workflows/update.yml` | Schedule that runs the collector twice a day and saves the results. |
 
 ## One-time setup (about 15 minutes)
