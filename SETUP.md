@@ -50,7 +50,7 @@ Instructions for running and maintaining Hawaii Ham Radio Activity. For an overv
 2. Click **Update data → Run workflow**.
 3. The first run takes about 3–5 minutes, because it downloads the FCC license database. A green check means it worked.
 
-From then on it runs on its own at **12:45 pm and 9:45 pm Hawaii time**. GitHub sometimes starts scheduled runs up to an hour late; that's normal.
+From then on it runs on its own at **2:15 pm and 9:45 pm Hawaii time** (00:15 and 07:45 UTC). GitHub sometimes starts scheduled runs up to an hour late; that's normal.
 
 ### 6. Add it to Google Sites
 1. In the Google Sites editor, click **Insert → Embed → By URL**.
