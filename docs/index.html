@@ -211,7 +211,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     <summary>How this works &amp; its limits</summary>
     <div class="method">
       <ul>
-        <li><b>The list:</b> this isn't a contest. By default, hams are listed by when they were last heard, grouped into <b>Heard today</b>, <b>This week</b> and <b>Earlier</b>, like a net roster. Switch to A–Z, or click a column header to sort by that column. <b>Active days</b> are distinct (UTC) days on which a ham made a logged QSO or was heard on the air.</li>
+        <li><b>The list:</b> this isn't a contest. By default, hams are listed by when they were last heard, grouped into <b>Heard on</b> the latest day, <b>Earlier this week</b> and <b>Earlier</b>, like a net roster. Dates are UTC days. Switch to A–Z, or click a column header to sort by that column. <b>Active days</b> are distinct (UTC) days on which a ham made a logged QSO or was heard on the air.</li>
         <li><b>Logged QSOs</b> come from the public <a href="https://pota.app">Parks on the Air</a> and <a href="https://www.sota.org.uk">Summits on the Air</a> logs for activations of Hawaii parks and summits. These are real contacts. SOTA doesn't report modes, so SOTA QSOs only appear under "All".</li>
         <li><b>POTA hunter QSOs</b> are contacts with park activators anywhere in the world, as logged by the activator. Hunters don't need to upload anything. POTA's public profile shows only a ham's 25 most recent hunter QSOs, and only for hams with a POTA account. So this covers about 120 Hawaii hams, history starts at each one's latest 25 contacts, and new contacts are captured each day going forward. The station's location isn't recorded, so residents are assumed to be hunting from home.</li>
         <li><b>Net check-ins</b> come from the public net logs on <a href="https://40meter.net">40meter.net</a>. These include the HF nets (Aloha, Hi-Noon and Afternoon nets on 7.090 MHz, plus Bandhopper, Mesh, ARES, 10-10 and HF hospital nets) and the VHF/UHF and digital nets (EARC Evening Net, BIARC, PRRC, East Hawaii ARES, the Hawaii DMR Net on TG 311551, C4FM and simplex nets). Each check-in counts as an active day for that station: voice for most nets, data for Winlink nets. Net control is shown separately. 40meter.net only keeps recent nets, so net data starts in late October / November 2026.</li>
@@ -368,9 +368,10 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     rows.sort((a,b) => { const ka = key(a), kb = key(b); for (let i=0;i<ka.length;i++) if (kb[i] !== ka[i]) return kb[i]-ka[i]; return call(a) < call(b) ? -1 : 1; });
     document.querySelectorAll('th.sortable').forEach(th => th.dataset.k === state.sort ? th.setAttribute('aria-sort','descending') : th.removeAttribute('aria-sort'));
     document.querySelectorAll('#f-view button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === state.sort)));
-    const group = a => a.last >= startOff ? 'Heard today' : a.last >= startOff - 6 ? 'This week' : 'Earlier';
+    const latest = dayDate(startOff).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
+    const group = a => a.last >= startOff ? `Heard on ${latest}` : a.last >= startOff - 6 ? 'Earlier this week' : 'Earlier';
     const counts = {}; if (state.sort === 'recent') rows.forEach(a => { const g = group(a); counts[g] = (counts[g]||0) + 1; });
-    const heard = d => d >= startOff ? 'Today' : d === startOff - 1 ? 'Yesterday' : dayDate(d).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
+    const heard = d => dayDate(d).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
 
     const tb = document.getElementById('rows'); tb.innerHTML = '';
     if (!rows.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">No activity matches these filters.</td></tr>'; }
@@ -378,7 +379,9 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
     rows.slice(0, state.shown).forEach((a, i) => {
       const s = D.stations[a.si];
       if (state.sort === 'recent'){ const g = group(a); if (g !== prevGroup){ prevGroup = g;
-        const gr = document.createElement('tr'); gr.className = 'grp'; gr.innerHTML = `<td colspan="9">${g}<span>${fmt(counts[g])} ${counts[g] === 1 ? 'ham' : 'hams'}</span></td>`; tb.appendChild(gr); } }
+        const gr = document.createElement('tr'); gr.className = 'grp';
+        const when = g.startsWith('Heard on') ? ' (UTC, latest update)' : '';
+        gr.innerHTML = `<td colspan="9">${g}<span>${when} · ${fmt(counts[g])} ${counts[g] === 1 ? 'ham' : 'hams'}</span></td>`; tb.appendChild(gr); } }
       const md = a.modeDays.map(x => x.size), tot = md.reduce((x,y) => x+y, 0) || 1;
       const order = [2,0,1,3];
       const mix = order.filter(m => md[m]).map(m => `<span style="flex:${md[m]};background:var(${MODE_VARS[m]})"></span>`).join('');
@@ -399,7 +402,7 @@ details{margin-top:16px} summary{cursor:pointer;font-weight:600}
   }
 
   const per = new Date(D.start + 'T00:00:00Z');
-  document.getElementById('sub').textContent = `On-air activity of amateur radio operators in Hawaii, from public logs and on-air reports. Data through ${asof.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'})} (UTC).`;
+  document.getElementById('sub').textContent = `On-air activity of amateur radio operators in Hawaii, from public logs and on-air reports. Data through ${asof.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'})} (UTC), updated ${new Date(D.generated + 'Z').toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Pacific/Honolulu'})} HST.`;
   document.getElementById('gen').textContent = `Data covers ${per.toLocaleDateString('en-US',{timeZone:'UTC'})} – ${asof.toLocaleDateString('en-US',{timeZone:'UTC'})}. Licensee list: FCC ULS amateur database (${fmt(D.licensed)} active Hawaii licenses). Updated ${D.generated.replace('T',' ')} UTC.`;
   const ofu = (D.forms || {}).optout;
   if (ofu) {
